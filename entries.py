@@ -1,12 +1,15 @@
 import tkinter;
 import config;
+import sys;
 from tkinter import *;
 from tkinter import messagebox;
+from tkinter import filedialog;
+from pathlib import Path;
 
 
 def entries_initialization():
     entry_bitrate = Entry(
-        config.frame,
+        config.frame
     )
     entry_bitrate.grid(row = 2, column = 2);
     temp_variable_0 = StringVar(config.frame);
@@ -17,3 +20,15 @@ def entries_initialization():
         'COM1', 'COM2', 'COM3', 'COM4', 'COM5'
     )
     dropdown_port_choice.grid(row = 2, column = 1, padx = 10, pady = 0);
+
+def browse_file_initialization():
+    temporary_0 = filedialog.askopenfilename(
+        initialdir = "C:/",
+        title = "Выберете файл",
+        filetypes = (
+            ("Text files", "*.txt"),
+            ("bin files", "*.bin"),
+            ("hex files", "*.hex")
+        )
+    )
+
