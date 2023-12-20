@@ -1,17 +1,12 @@
 import tkinter;
-import config;
-import labels;
-import entries;
-import buttons;
+import configuration;
+import connection;
 from tkinter import *;
-from tkinter import messagebox;
 
+configuration.window.title("Программа загрузчика STS-103");
+configuration.window.geometry('600x730');
 
-config.window.title("Программа загрузчика STS-103");
-config.window.geometry('540x230');
+connection.frame_connection.pack(expand = True);
+connection.interface_connetion_initialization();
 
-config.frame.pack(expand=True);
-labels.labels_initialization();
-entries.entries_initialization();
-buttons.buttons_initialization();
-config.window.mainloop();
+configuration.window.mainloop();
