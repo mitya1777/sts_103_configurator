@@ -23,14 +23,18 @@ def buttons_initialization():
         frame_sw_updation,
         text = "Выбор файла прошивки",
         command = browse_file_initialization,
-        font = ('Courier New', 14, 'bold')
+        font = ('Courier New', 14, 'bold'),
+        fg_color = '#078273',
+        hover_color = '#045850'
     )
     button_file_browse.grid(row = 0, column = 0, padx = 10);
 
     button_launch = customtkinter.CTkButton(
         frame_sw_updation,
         text = "Обновить ПО",
-        font = ('Courier New', 14, 'bold')
+        font = ('Courier New', 14, 'bold'),
+        fg_color = '#078273',
+        hover_color = '#045850'
     )
     button_launch.grid(row = 0, column = 1, pady = 10);
 
