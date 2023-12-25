@@ -7,7 +7,7 @@ import software_update;
 
 
 configuration.window.title("Программа загрузчика STS-103");
-configuration.window.geometry('600x730');
+configuration.window.geometry('520x730');
 
 connection.interface_connetion_initialization();
 system.interface_system_initialization();
