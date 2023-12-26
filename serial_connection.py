@@ -2,8 +2,8 @@ import serial;
 import serial.tools.list_ports;
 import configuration;
 import crc;
-#from crc import 
-from enum import Enum;
+from crc import Crc16;
+import system;
 
 osi_transport_base =    {
     'RS485_CORRECT_PACKET': 0x00,
@@ -56,7 +56,6 @@ osi_application_parameters= {
 #
 #   variables
 #
-device_version = "Данные отсутсвуют";
 list_of_ports = [];
 
 def available_ports_updation():
@@ -68,42 +67,51 @@ def available_ports_updation():
 def port_setup_connection():
     port = configuration.com_port;
     baudrate = configuration.baudrate;
+
     print(port, baudrate);
-    connection = serial.Serial(port, baudrate);
-    data_exchange_process(osi_transport_commands['COMMAND_PARAMETERS_GETTING'],
-                          osi_application_parameters['PARAMETER_DEVICE_VERSION']);
-    connection.close();
-
-def data_exchange_process(osi_transport_command, osi_application_parameter):
-    command_transition(osi_transport_command, osi_application_parameter);
-
-
+    connection = serial.Serial(port, baudrate, timeout = 100);
+    tx_size = command_transition(osi_transport_commands['COMMAND_PARAMETERS_GETTING'],
+                                 osi_application_parameters['PARAMETER_DEVICE_VERSION']);
+    connection.write(configuration.tx_buffer[0x00 : tx_size]);
+    connection.reset_output_buffer();
+    connection.timeout = 1 / configuration.RX_BUFFER_SIZE;
+    for shift in range(configuration.RX_BUFFER_SIZE):
+        configuration.rx_buffer[shift] = int.from_bytes(connection.read(0x01));
+        if(configuration.rx_buffer[shift] == 0xFE):
+            rx_size = shift + 0x01;
+            command_parsing(configuration.tx_buffer[0x03]),
+            break;
+    if connection.is_open:
+        connection.close();
+   
 def command_transition(osi_transport_command, osi_application_parameter):
-    configuration.tx_buffer[1] = osi_transport_base['RS485_START_BYTE'];
+    crc_calculator = configuration.crc_initialization();
+    configuration.tx_buffer[0x00] = osi_transport_base['RS485_START_BYTE'];
     configuration.tx_buffer[0x01] = configuration.slave_device_address;
     configuration.tx_buffer[0x02] = configuration.slave_device_identificator;
     configuration.tx_buffer[0x03] = osi_transport_command;
     configuration.tx_buffer[0x04] = 0x01;
     configuration.tx_buffer[0x05] = 0x00;
     configuration.tx_buffer[0x06] = osi_application_parameter;
-    crc_calculated = crc_calculation();
+    crc_calculated = crc_calculation(configuration.tx_buffer[0x01 : 0x07]);
     configuration.tx_buffer[0x07] = (crc_calculated & 0xFF00) >> 0x8;
     configuration.tx_buffer[0x08] = (crc_calculated & 0x00FF);
     configuration.tx_buffer[0x09] = osi_transport_base['RS485_STOP_BYTE'];
+    tx_size = 0x0A;
+    return tx_size;
 
-'''
-    match osi_transport_command:
-        case COMMAND_DEVICE_STATE:
-            configuration.tx_buffer[0x03] = osi_transport_commands['COMMAND_DEVICE_STATE'];
-            parameter_transition(osi_application_parameter);
+def command_parsing(osi_transport_command):
+    match(osi_transport_command ^ 0x80):
+        case 0x01:
+            application_parsing(configuration.tx_buffer[0x06]);
 
-def parameter_transition(osi_application_parameter):
-    match osi_application_parameter:
-        case PARAMETER_DEVICE_VERSION:
-            configuration.tx_buffer[0x05] = osi_application_parameter['PARAMETER_DEVICE_VERSION'];
-'''
+def application_parsing(osi_application_parameter):
+    match(osi_application_parameter):
+        case 0x13:
+            configuration.device_version = str(configuration.tx_buffer[0x07 : 0x0F]);
+            system.labels_initialization();
 
-def crc_calculation():
-    try_data = bytes([0xAA, 0xBB, 0xCC, 0xAD, 0xFA]);
-    try_result = crc.Calculator(try_data);
-    try_expected = 0xE4E9;
+def crc_calculation(tx_buffer):
+    crc_calculator = configuration.crc_initialization();
+    crc_calculation = crc_calculator.checksum(bytes(tx_buffer));
+    return crc_calculation;

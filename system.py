@@ -41,7 +41,7 @@ def labels_initialization():
 
     label_version_out = customtkinter.CTkLabel(
         frame_system,
-        text = serial_connection.device_version,
+        text = configuration.device_version,
         font = ('Courier New', 14),
         anchor = 'e',
         justify = 'right',

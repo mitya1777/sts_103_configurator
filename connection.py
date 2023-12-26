@@ -24,7 +24,6 @@ def interface_connetion_initialization():
     labels_initialization();
     entries_initialization();
     buttons_initialization();
-    configuration.crc_initialization();
 
 #
 #   labels definition
