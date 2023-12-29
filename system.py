@@ -4,11 +4,16 @@ import serial_connection;
 from tkinter import *;
 
 
+
 frame_system = customtkinter.CTkFrame(
     configuration.window,
     width = 300,
     height = 500
 )
+
+label_system_base = customtkinter.CTkLabel(frame_system);
+label_version = customtkinter.CTkLabel(frame_system);
+label_version_out = customtkinter.CTkLabel(frame_system);
 
 def interface_system_initialization():
     frame_system.pack(expand = True, side = TOP);
@@ -47,6 +52,12 @@ def labels_initialization():
         justify = 'right',
     )
     label_version_out.grid(padx = 10, row = 1, column = 1, sticky = 'e');
+
+def labels_deinitialization():
+    label_system_base.destroy();
+    label_version.destroy();
+    label_version_out.destroy();
+
 
 #
 #   entries definition
