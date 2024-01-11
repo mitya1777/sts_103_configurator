@@ -66,33 +66,21 @@ def available_ports_updation():
         list_of_ports.append(port.device);
 
 def port_setup_connection():
+    global connection;
     port = configuration.com_port;
     baudrate = configuration.baudrate;
-
-    print(port, baudrate);
     connection = serial.Serial(port, baudrate, timeout = 100);
+
     tx_size = packet_forming(osi_transport_commands['COMMAND_PARAMETERS_GETTING'],
                              osi_application_parameters['PARAMETER_DEVICE_VERSION']);
-    connection.write(configuration.tx_buffer[0x00 : tx_size]);
-    connection.reset_output_buffer();
-    #connection.timeout = float(1.0 / configuration.RX_BUFFER_SIZE);
-    connection.timeout = 100e-3;
-    configuration.rx_buffer = connection.readline();
-    for shift in range(len(configuration.rx_buffer)):
-        try0 = configuration.rx_buffer[shift];
-        if(configuration.rx_buffer[shift] == 0xFE):
-            rx_size = shift + 0x01;
-            transport_packet_parsing(configuration.rx_buffer[0x03]),
-            break;
-    '''
-    for shift in range(configuration.RX_BUFFER_SIZE):
-        configuration.rx_buffer[shift] = int.from_bytes(connection.read(0x01));
-        if(configuration.rx_buffer[shift] == 0xFE):
-            rx_size = shift + 0x01;
-            transport_packet_parsing(configuration.rx_buffer[0x04]),
-            break;
-    '''
-    connection.reset_input_buffer();
+    data_transmit_process(pacet_size = tx_size);
+    data_receive_process();
+    
+    tx_size = packet_forming(osi_transport_commands['COMMAND_PARAMETERS_GETTING'],
+                             osi_application_parameters['PARAMETER_DEVICE_ADDRESS']);
+    data_transmit_process(pacet_size = tx_size);
+    data_receive_process();
+
     if connection.is_open:
         connection.close();
    
@@ -112,6 +100,24 @@ def packet_forming(osi_transport_command, osi_application_parameter):
     tx_size = 0x0A;
     return tx_size;
 
+def data_transmit_process(pacet_size):
+    connection.write(configuration.tx_buffer[0x00 : pacet_size]);
+    connection.reset_output_buffer();
+    connection.timeout = 100e-3;
+
+def data_receive_process():
+    configuration.rx_buffer = connection.readline();
+    for shift in range(len(configuration.rx_buffer)):
+        try0 = configuration.rx_buffer[shift];
+        if(configuration.rx_buffer[shift] == osi_transport_base['RS485_START_BYTE']):
+            packet_start = shift;
+        if(configuration.rx_buffer[shift] == osi_transport_base['RS485_STOP_BYTE']):
+            rx_size = shift - packet_start + 0x01;
+            if(rx_size >= 0x05):
+                transport_packet_parsing(configuration.rx_buffer[0x03]),
+            break;
+    connection.reset_input_buffer();
+
 def transport_packet_parsing(osi_transport_command):
     match(osi_transport_command ^ 0x80):
         case 0x01:
@@ -119,11 +125,34 @@ def transport_packet_parsing(osi_transport_command):
 
 def application_packet_parsing(osi_application_parameter):
     match(osi_application_parameter):
+        #case 0x00:
+
         case 0x13:
             configuration.device_version = configuration.rx_buffer[0x07 : 0x0F];
-            system.labels_deinitialization();
             system.labels_initialization();
 
+            #   add the device type, address fields.
+'''        
+    
+    'PARAMETER_LOW_VOLTAGE_THRESHOLD': 0x03,
+    'PARAMETER_HIGH_VOLTAGE_THRESHOLD': 0x04,
+    'PARAMETER_VOLTAGE_PERIOD_MEASUREMENT': 0x05,
+    'PARAMETER_INDICATION_MODE': 0x06,
+    'PARAMETER_ALERT_EXPIRE': 0x07,
+    'PARAMETER_PYD1588_THRESCHOLD': 0x08,
+    'PARAMETER_PYD1588_BLIND_TIME': 0x09,
+    'PARAMETER_PYD1588_PULSE_COUNTER': 0x0A,
+    'PARAMETER_PYD1588_WINDOW_TIME': 0x0B,
+    'PARAMETER_PYD1588_SIGNAL_SOURCE': 0x0C,
+    'PARAMETER_PYD1588_CUT_OFF_FREQUENCY': 0x0D,
+    'PARAMETER_PYD1588_COUNTING_MODE': 0x0E,
+    'PARAMETER_PYD1588_RAW_DATA': 0x0F,
+    'PARAMETER_VOLTAGE_VALUE': 0x10,
+    'PARAMETER_EVENTS_QUANTITY': 0x11,
+    'PARAMETER_SERIAL_NUMBER': 0x12,
+'''
+
+          
 
 def crc_calculation(tx_buffer):
     crc_calculator = configuration.crc_initialization();
